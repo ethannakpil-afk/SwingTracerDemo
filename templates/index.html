@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SwingTech — Video Analysis Platform</title>
+
+<style>
+  :root {
+    --bg: #07090d;
+    --bg-soft: #0e1218;
+    --panel: #111722;
+    --panel-2: #151c28;
+    --border: #1e2735;
+    --border-soft: #273347;
+    --text: #eef2f8;
+    --muted: #8a96a8;
+    --muted-2: #5e6a7c;
+    --accent: #34d399;
+    --accent-2: #22c55e;
+    --accent-glow: rgba(52, 211, 153, 0.25);
+    --danger: #f87171;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(52, 211, 153, 0.08), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 40px 18px 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { width: 100%; max-width: 880px; }
+
+  /* ---------- Header ---------- */
+  .brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+
+  .brand-mark {
+    width: 46px; height: 46px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 6px 22px var(--accent-glow);
+  }
+  .brand-mark svg { width: 26px; height: 26px; }
+
+  h1 {
+    font-size: clamp(34px, 6vw, 54px);
+    letter-spacing: -1px;
+    font-weight: 800;
+    background: linear-gradient(180deg, #ffffff, #b9c4d4);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tagline {
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 34px;
+    font-size: 15px;
+  }
+
+  /* ---------- Upload ---------- */
+  .upload-box {
+    border: 2px dashed var(--border-soft);
+    border-radius: var(--radius);
+    padding: 30px 24px;
+    text-align: center;
+    margin-bottom: 18px;
+    background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+    transition: border-color .2s, background .2s, transform .15s;
+  }
+  .upload-box h2 { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .upload-box .hint { color: var(--muted-2); font-size: 14px; }
+  .upload-box.dragover {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, #12241d, var(--bg-soft));
+    transform: scale(1.005);
+  }
+
+  .upload-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #04140d;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 11px 22px;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .2s;
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  .upload-cta:hover { transform: translateY(-1px); box-shadow: 0 10px 24px var(--accent-glow); }
+  .upload-cta:active { transform: translateY(0); }
+  #videoInput { display: none; }
+
+  #previewMediaWrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border-radius: var(--radius-sm);
+    display: none;
+    overflow: hidden;
+    margin-top: 18px;
+    border: 1px solid var(--border);
+  }
+  #videoPreview { width: 100%; height: 100%; object-fit: contain; }
+
+  .preview-badge {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: rgba(7, 9, 13, 0.78);
+    backdrop-filter: blur(6px);
+    color: var(--accent);
+    font-size: 12px; font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--border-soft);
+    display: none;
+  }
+
+  .file-row {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+  }
+  .file-row .fname { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  /* ---------- Library ---------- */
+  .library-box {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 34px;
+  }
+  .library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .library-header strong { font-size: 15px; }
+  #libraryCount { color: var(--muted-2); font-size: 13px; margin-top: 3px; }
+
+  .library-list {
+    display: none;
+    margin-top: 16px;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .lib-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+  }
+  .lib-item .meta { display: flex; flex-direction: column; overflow: hidden; }
+  .lib-item .meta b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lib-item .meta span { color: var(--muted-2); font-size: 12px; }
+  .lib-empty { color: var(--muted-2); font-size: 13px; text-align: center; padding: 8px 0; }
+
+  /* ---------- Saved Reports ---------- */
+  .reports-box {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-top: 34px;
+  }
+  #reportsCount { color: var(--muted-2); font-size: 13px; margin-top: 3px; }
+  .reports-list {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .report-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+  }
+  .report-item .meta { display: flex; flex-direction: column; overflow: hidden; }
+  .report-item .meta b { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .report-item .meta span { color: var(--muted-2); font-size: 12px; margin-top: 2px; }
+  .report-badge {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .report-badge.analysis { background: rgba(52,211,153,.14); color: var(--accent); }
+  .report-badge.compare  { background: rgba(96,165,250,.14); color: #60a5fa; }
+  .reports-empty { color: var(--muted-2); font-size: 13px; text-align: center; padding: 8px 0; }
+
+  /* Report detail viewer (modal) */
+  .report-modal {
+    position: fixed; inset: 0;
+    background: rgba(5,7,10,.78);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 60;
+    padding: 20px;
+  }
+  .report-modal.show { display: flex; }
+  .report-card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    width: min(560px, 94vw);
+    max-height: 84vh;
+    overflow: auto;
+    box-shadow: var(--shadow);
+  }
+  .report-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; margin-bottom: 6px;
+  }
+  .report-card-head h3 { font-size: 17px; }
+  .report-card .when { color: var(--muted-2); font-size: 12px; margin-bottom: 16px; }
+  .report-pre {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .modal-close {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    width: 30px; height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ---------- Tools ---------- */
+  .section-label {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+  }
+  .tools {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 13px;
+  }
+  .action-btn {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform .14s, border-color .2s, box-shadow .2s;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .action-btn:hover {
+    border-color: var(--accent);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(0,0,0,.4);
+  }
+  .action-btn:active { transform: translateY(-1px); }
+  .btn-icon {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(52, 211, 153, 0.10);
+    border: 1px solid rgba(52, 211, 153, 0.18);
+    color: var(--accent);
+  }
+  .btn-icon svg { width: 20px; height: 20px; }
+  .btn-name { font-size: 15px; font-weight: 700; }
+  .btn-desc { color: var(--muted-2); font-size: 12.5px; line-height: 1.4; }
+
+  /* ---------- Buttons ---------- */
+  button { font-family: inherit; }
+  .small-btn {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s, border-color .15s;
+    white-space: nowrap;
+  }
+  .small-btn:hover { background: #1c2433; border-color: var(--accent); }
+  .small-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* ---------- Status ---------- */
+  .status {
+    margin-top: 26px;
+    color: var(--muted);
+    font-size: 13.5px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .status .dot.busy { background: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+  .status .dot.error { background: var(--danger); box-shadow: 0 0 10px var(--danger); }
+
+  /* ---------- Loading overlay ---------- */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 10, 0.78);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+  .overlay.show { display: flex; }
+  .loader-card {
+    background: var(--panel);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    padding: 30px 38px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    width: min(340px, 90vw);
+  }
+  .spinner {
+    width: 52px; height: 52px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    border: 4px solid var(--border-soft);
+    border-top-color: var(--accent);
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-card .title { font-weight: 700; font-size: 16px; margin-bottom: 6px; }
+  .loader-card .sub { color: var(--muted-2); font-size: 13px; margin-bottom: 16px; }
+  .progress-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 30%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    animation: indeterminate 1.3s ease-in-out infinite;
+  }
+  @keyframes indeterminate {
+    0%   { margin-left: -35%; width: 35%; }
+    50%  { margin-left: 40%;  width: 45%; }
+    100% { margin-left: 100%; width: 35%; }
+  }
+
+  /* ---------- Mode tabs ---------- */
+  .mode-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 5px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    margin: 0 auto 30px;
+  }
+  .mode-tab {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 9px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background .18s, color .18s;
+  }
+  .mode-tab.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #04140d;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .tab-center { display: flex; justify-content: center; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ---------- Compare screen ---------- */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 18px;
+  }
+  .swing-panel {
+    background: linear-gradient(180deg, var(--panel), var(--bg-soft));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .swing-panel h3 {
+    font-size: 15px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .swing-tag {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: grid; place-items: center;
+    font-size: 12px; font-weight: 800;
+    color: #04140d;
+  }
+  .swing-tag.a { background: var(--accent); }
+  .swing-tag.b { background: #60a5fa; }
+
+  .mini-drop {
+    border: 2px dashed var(--border-soft);
+    border-radius: var(--radius-sm);
+    padding: 18px;
+    text-align: center;
+    transition: border-color .2s, background .2s;
+    cursor: pointer;
+  }
+  .mini-drop:hover, .mini-drop.dragover {
+    border-color: var(--accent);
+    background: #12241d;
+  }
+  .mini-drop .hint { color: var(--muted-2); font-size: 13px; margin-top: 4px; }
+  .mini-drop input { display: none; }
+
+  .mini-preview {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    max-height: 420px;
+    background: #000;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-top: 12px;
+    display: none;
+    border: 1px solid var(--border);
+  }
+  .mini-preview video { width: 100%; height: 100%; object-fit: contain; }
+  .mini-fname { color: var(--muted); font-size: 12px; margin-top: 8px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .compare-run {
+    width: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #04140d;
+    font-weight: 800;
+    font-size: 15px;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 15px;
+    cursor: pointer;
+    transition: transform .12s, box-shadow .2s, opacity .2s;
+    box-shadow: 0 6px 18px var(--accent-glow);
+  }
+  .compare-run:hover { transform: translateY(-1px); }
+  .compare-run:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ---------- Results table ---------- */
+  .results-wrap { display: none; margin-top: 26px; }
+  .results-wrap h3 { font-size: 16px; margin-bottom: 14px; }
+  .results-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .results-head h3 { margin-bottom: 0; }
+  .results-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .metric-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .metric-table th, .metric-table td {
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .metric-table th {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+  }
+  .metric-table td:first-child, .metric-table th:first-child {
+    text-align: left;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .metric-table tr:last-child td { border-bottom: none; }
+  .metric-table .val { font-variant-numeric: tabular-nums; font-weight: 700; }
+  .col-a { color: var(--accent); }
+  .col-b { color: #60a5fa; }
+  .diff-pos { color: var(--accent); }
+  .diff-neg { color: var(--danger); }
+  .diff-zero { color: var(--muted-2); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 720px) {
+    .tools { grid-template-columns: repeat(2, 1fr); }
+    .compare-grid { grid-template-columns: 1fr; }
+    .metric-table th, .metric-table td { padding: 10px 8px; font-size: 12.5px; }
+  }
+  @media (max-width: 460px) {
+    body { padding: 28px 14px 60px; }
+    .tools { grid-template-columns: 1fr; }
+    .brand-mark { width: 40px; height: 40px; }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#04140d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 20 L14 6"/><circle cx="15" cy="5" r="2.4" fill="#04140d" stroke="none"/><path d="M4 20 h6"/>
+      </svg>
+    </div>
+    <h1>SwingTech</h1>
+  </div>
+  <p class="tagline">AI-powered golf swing video analysis</p>
+
+  <!-- Mode tabs -->
+  <div class="tab-center">
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="single">Single Analysis</button>
+      <button class="mode-tab" data-mode="compare">Compare Swings</button>
+    </div>
+  </div>
+
+  <!-- ============ SINGLE SCREEN ============ -->
+  <div class="screen active" id="screenSingle">
+
+  <!-- Upload -->
+  <div class="upload-box" id="dropZone">
+    <h2>Upload Swing Video</h2>
+    <p class="hint">Drag &amp; drop a video here, or choose a file</p>
+
+    <input type="file" id="videoInput" accept="video/*">
+    <button class="upload-cta" id="chooseBtn">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 16V4"/><path d="M7 9l5-5 5 5"/><path d="M4 20h16"/>
+      </svg>
+      Choose Video
+    </button>
+
+    <div id="previewMediaWrap">
+      <div class="preview-badge" id="previewBadge">RESULT</div>
+      <video id="videoPreview" controls loop muted playsinline></video>
+    </div>
+
+    <div class="file-row" id="fileRow">
+      <span class="fname" id="fileName"></span>
+      <div class="file-actions">
+        <span id="fileSize"></span>
+        <button class="small-btn" id="downloadBtn" style="display:none;">Download</button>
+        <button class="small-btn" id="saveSingleDataBtn" style="display:none;">Save Data</button>
+        <button class="small-btn danger" id="clearBtn">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Library -->
+  <div class="library-box">
+    <div class="library-header">
+      <div>
+        <strong>Media Library</strong>
+        <div id="libraryCount">No files saved yet</div>
+      </div>
+      <button class="small-btn" id="toggleLibraryBtn">Open</button>
+    </div>
+    <div class="library-list" id="libraryList"></div>
+  </div>
+
+  <p class="section-label">Analysis Tools</p>
+
+  <div class="tools" id="toolsGrid"></div>
+
+  <div class="status" id="statusRow">
+    <span class="dot" id="statusDot"></span>
+    <span id="statusText">System ready</span>
+  </div>
+
+  </div><!-- /screenSingle -->
+
+  <!-- ============ COMPARE SCREEN ============ -->
+  <div class="screen" id="screenCompare">
+
+    <div class="compare-grid">
+      <!-- Swing A -->
+      <div class="swing-panel">
+        <h3><span class="swing-tag a">A</span> Swing 1</h3>
+        <div class="mini-drop" id="dropA">
+          <strong>Drop or choose video</strong>
+          <div class="hint">First swing to compare</div>
+          <input type="file" id="inputA" accept="video/*">
+        </div>
+        <div class="mini-preview" id="previewWrapA"><video id="previewA" muted loop playsinline controls></video></div>
+        <div class="mini-fname" id="fnameA"></div>
+      </div>
+
+      <!-- Swing B -->
+      <div class="swing-panel">
+        <h3><span class="swing-tag b">B</span> Swing 2</h3>
+        <div class="mini-drop" id="dropB">
+          <strong>Drop or choose video</strong>
+          <div class="hint">Second swing to compare</div>
+          <input type="file" id="inputB" accept="video/*">
+        </div>
+        <div class="mini-preview" id="previewWrapB"><video id="previewB" muted loop playsinline controls></video></div>
+        <div class="mini-fname" id="fnameB"></div>
+      </div>
+    </div>
+
+    <button class="compare-run" id="compareRunBtn" disabled>Run Comparison</button>
+
+    <!-- Results -->
+    <div class="results-wrap" id="resultsWrap">
+      <div class="results-head">
+        <h3>Analysis Results</h3>
+        <div class="results-actions">
+          <button class="small-btn" id="downloadBothBtn">Download Both Videos</button>
+          <button class="small-btn" id="saveDataBtn">Save Data</button>
+        </div>
+      </div>
+      <div class="compare-grid">
+        <div class="swing-panel">
+          <h3><span class="swing-tag a">A</span> Swing 1</h3>
+          <div class="mini-preview" style="display:block;"><video id="resultA" muted loop playsinline controls></video></div>
+        </div>
+        <div class="swing-panel">
+          <h3><span class="swing-tag b">B</span> Swing 2</h3>
+          <div class="mini-preview" style="display:block;"><video id="resultB" muted loop playsinline controls></video></div>
+        </div>
+      </div>
+
+      <table class="metric-table" id="metricTable">
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th class="col-a">Swing 1</th>
+            <th class="col-b">Swing 2</th>
+            <th>Difference</th>
+          </tr>
+        </thead>
+        <tbody id="metricBody"></tbody>
+      </table>
+    </div>
+
+    <div class="status" id="compareStatusRow">
+      <span class="dot" id="compareStatusDot"></span>
+      <span id="compareStatusText">Upload two swings to compare</span>
+    </div>
+
+  </div><!-- /screenCompare -->
+
+  <!-- ============ SAVED REPORTS (server-side) ============ -->
+  <div class="reports-box">
+    <div class="library-header">
+      <div>
+        <strong>Saved Reports</strong>
+        <div id="reportsCount">Loading…</div>
+      </div>
+      <button class="small-btn" id="refreshReportsBtn">Refresh</button>
+    </div>
+    <div class="reports-list" id="reportsList"></div>
+  </div>
+
+</div>
+
+<!-- Report detail modal -->
+<div class="report-modal" id="reportModal">
+  <div class="report-card">
+    <div class="report-card-head">
+      <h3 id="reportModalTitle">Report</h3>
+      <button class="modal-close" id="reportModalClose">&times;</button>
+    </div>
+    <div class="when" id="reportModalWhen"></div>
+    <div class="report-pre" id="reportModalBody"></div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="overlay" id="overlay">
+  <div class="loader-card">
+    <div class="spinner"></div>
+    <div class="title" id="loaderTitle">Analyzing…</div>
+    <div class="sub" id="loaderSub">Processing your swing, this may take a moment.</div>
+    <div class="progress-track"><div class="progress-bar"></div></div>
+  </div>
+</div>
+
+<script>
+  /* ---------- Tool definitions (with inline SVG icons) ---------- */
+  const ICONS = {
+    head:    '<circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+    elbow:   '<path d="M6 4v7a5 5 0 0 0 5 5h7"/><circle cx="6" cy="4" r="1.6"/><circle cx="18" cy="16" r="1.6"/>',
+    posture: '<path d="M12 3v18"/><path d="M7 8h10"/><path d="M9 21l3-4 3 4"/>',
+    knee:    '<path d="M8 3v8l-3 10"/><path d="M8 11l8 2 3 8"/><circle cx="8" cy="11" r="1.6"/>',
+    wrist:   '<path d="M3 18c5-8 13-8 18 0"/><circle cx="3" cy="18" r="1.6"/><circle cx="21" cy="18" r="1.6"/>',
+    phase:   '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M9 9l4 3-4 3z"/>',
+    compare: '<path d="M12 3v18"/><path d="M5 8l-3 4 3 4"/><path d="M19 8l3 4-3 4"/>',
+    shoulder:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18"/>',
+    hip:     '<circle cx="12" cy="12" r="9"/><path d="M3 12a9 5 0 0 0 18 0"/>',
+    xfactor: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>'
+  };
+
+  const TOOLS = [
+    { route: "/analyze/headstability", label: "Head Stability", icon: "head",     desc: "Track head position & drift" },
+    { route: "/analyze/elbow",         label: "Elbow Angle",    icon: "elbow",    desc: "Lead & trail arm tracking" },
+    { route: "/analyze/posture",       label: "Posture",        icon: "posture",  desc: "Spine angle & tilt" },
+    { route: "/analyze/kneeflex",      label: "Knee Flex",      icon: "knee",     desc: "Flex & stability through swing" },
+    { route: "/analyze/wristpath",     label: "Wrist Path",     icon: "wrist",    desc: "Club path & release trace" },
+    { route: "/analyze/swingphase",    label: "Swing Phase",    icon: "phase",    desc: "Address, backswing, impact, follow" },
+    { route: "/analyze/shoulderturn",  label: "Shoulder Turn",  icon: "shoulder", desc: "Rotation angle & depth" },
+    { route: "/analyze/hipturn",       label: "Hip Rotation",   icon: "hip",      desc: "Hip turn speed & timing" },
+    { route: "/analyze/xfactor",       label: "X Factor",       icon: "xfactor",  desc: "Hip vs shoulder differential" },
+    { route: "__compare__",            label: "Compare Analytics", icon: "compare", desc: "Compare two swings (needs 2 videos)" }
+  ];
+
+  /* ---------- Element refs ---------- */
+  const dropZone        = document.getElementById("dropZone");
+  const videoInput      = document.getElementById("videoInput");
+  const chooseBtn       = document.getElementById("chooseBtn");
+  const fileRow         = document.getElementById("fileRow");
+  const fileName        = document.getElementById("fileName");
+  const fileSize        = document.getElementById("fileSize");
+  const downloadBtn     = document.getElementById("downloadBtn");
+  const saveSingleDataBtn = document.getElementById("saveSingleDataBtn");
+  const clearBtn        = document.getElementById("clearBtn");
+  const libraryCount    = document.getElementById("libraryCount");
+  const libraryList     = document.getElementById("libraryList");
+  const toggleLibraryBtn= document.getElementById("toggleLibraryBtn");
+  const statusText      = document.getElementById("statusText");
+  const statusDot       = document.getElementById("statusDot");
+  const previewMediaWrap= document.getElementById("previewMediaWrap");
+  const previewBadge    = document.getElementById("previewBadge");
+  const videoPreview    = document.getElementById("videoPreview");
+  const toolsGrid       = document.getElementById("toolsGrid");
+  const overlay         = document.getElementById("overlay");
+  const loaderTitle     = document.getElementById("loaderTitle");
+
+  let selectedVideoFile = null;
+  let lastOutputUrl     = null;
+  let lastSingleResult  = null;   // { label, route, fileName, fileSize, outputVideo }
+  const library = [];   // { name, size, file, objectUrl }
+
+  /* ---------- Build tool buttons ---------- */
+  TOOLS.forEach(tool => {
+    const btn = document.createElement("button");
+    btn.className = "action-btn";
+    btn.innerHTML = `
+      <div class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[tool.icon]}</svg></div>
+      <div>
+        <div class="btn-name">${tool.label}</div>
+        <div class="btn-desc">${tool.desc}</div>
+      </div>`;
+    btn.addEventListener("click", () => {
+      if (tool.route === "__compare__") return runCompare();
+      runAnalysis(tool.route, tool.label);
+    });
+    toolsGrid.appendChild(btn);
+  });
+
+  /* ---------- Helpers ---------- */
+  function formatBytes(bytes) {
+    if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+  function setStatus(msg, state = "ready") {
+    statusText.textContent = msg;
+    statusDot.className = "dot" + (state === "busy" ? " busy" : state === "error" ? " error" : "");
+  }
+  function showLoader(label) {
+    loaderTitle.textContent = label + "…";
+    overlay.classList.add("show");
+  }
+  function hideLoader() { overlay.classList.remove("show"); }
+
+  function renderLibrary() {
+    if (library.length === 0) {
+      libraryCount.textContent = "No files saved yet";
+      libraryList.innerHTML = '<div class="lib-empty">Your uploaded videos will appear here.</div>';
+      return;
+    }
+    libraryCount.textContent = library.length + (library.length === 1 ? " file saved" : " files saved");
+    libraryList.innerHTML = "";
+    library.forEach((item, i) => {
+      const row = document.createElement("div");
+      row.className = "lib-item";
+      row.innerHTML = `
+        <div class="meta"><b>${item.name}</b><span>${formatBytes(item.size)}</span></div>
+        <div class="file-actions">
+          <button class="small-btn" data-load="${i}">Load</button>
+          <button class="small-btn danger" data-del="${i}">Remove</button>
+        </div>`;
+      libraryList.appendChild(row);
+    });
+    libraryList.querySelectorAll("[data-load]").forEach(b =>
+      b.addEventListener("click", () => loadVideo(library[+b.dataset.load].file, false)));
+    libraryList.querySelectorAll("[data-del]").forEach(b =>
+      b.addEventListener("click", () => { library.splice(+b.dataset.del, 1); renderLibrary(); }));
+  }
+
+  function loadVideo(file, addToLibrary = true) {
+    if (!file || !file.type.startsWith("video/")) {
+      setStatus("Please choose a valid video file.", "error");
+      return;
+    }
+    selectedVideoFile = file;
+    lastOutputUrl = null;
+    lastSingleResult = null;
+
+    videoPreview.src = URL.createObjectURL(file);
+    videoPreview.muted = true;
+    previewMediaWrap.style.display = "block";
+    previewBadge.style.display = "none";
+
+    fileName.textContent = file.name;
+    fileSize.textContent = formatBytes(file.size);
+    fileRow.style.display = "flex";
+    downloadBtn.style.display = "none";
+    saveSingleDataBtn.style.display = "none";
+
+    if (addToLibrary && !library.some(x => x.name === file.name && x.size === file.size)) {
+      library.unshift({ name: file.name, size: file.size, file });
+      renderLibrary();
+    }
+    setStatus("Loaded: " + file.name, "ready");
+  }
+
+  function clearAll() {
+    selectedVideoFile = null;
+    lastOutputUrl = null;
+    lastSingleResult = null;
+    videoPreview.removeAttribute("src");
+    videoPreview.load();
+    previewMediaWrap.style.display = "none";
+    fileRow.style.display = "none";
+    downloadBtn.style.display = "none";
+    saveSingleDataBtn.style.display = "none";
+    setStatus("Cleared. Ready for a new video.", "ready");
+  }
+
+  /* ---------- Events ---------- */
+  chooseBtn.addEventListener("click", () => videoInput.click());
+  videoInput.addEventListener("change", function () { if (this.files[0]) loadVideo(this.files[0]); });
+  clearBtn.addEventListener("click", clearAll);
+
+  downloadBtn.addEventListener("click", () => {
+    if (!lastOutputUrl) return;
+    const a = document.createElement("a");
+    a.href = lastOutputUrl;
+    a.download = "swingtech_result.mp4";
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  saveSingleDataBtn.addEventListener("click", () => {
+    if (!lastSingleResult) { setStatus("Run an analysis first.", "error"); return; }
+
+    const r = lastSingleResult;
+    const title = r.label + (r.fileName ? " — " + r.fileName : "");
+    const data = {
+      analysis: r.label,
+      source_file: r.fileName,
+      source_size_bytes: r.fileSize,
+      result_video: r.outputVideo,
+    };
+
+    saveSingleDataBtn.disabled = true;
+    setStatus("Saving " + r.label + " report…", "busy");
+
+    saveReportToServer("analysis", title, data)
+      .then(res => {
+        saveSingleDataBtn.disabled = false;
+        if (res.error) { setStatus("Save failed: " + res.error, "error"); return; }
+        setStatus(r.label + " report saved to Saved Reports.", "ready");
+        loadReports();
+      })
+      .catch(err => {
+        saveSingleDataBtn.disabled = false;
+        console.error("Save report error:", err);
+        setStatus("Save failed. Check terminal/console.", "error");
+      });
+  });
+
+  ["dragenter", "dragover"].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add("dragover"); }));
+  ["dragleave", "drop"].forEach(evt =>
+    dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove("dragover"); }));
+  dropZone.addEventListener("drop", e => { if (e.dataTransfer.files[0]) loadVideo(e.dataTransfer.files[0]); });
+
+  toggleLibraryBtn.addEventListener("click", () => {
+    const open = libraryList.style.display === "flex";
+    libraryList.style.display = open ? "none" : "flex";
+    toggleLibraryBtn.textContent = open ? "Open" : "Close";
+    if (!open) renderLibrary();
+  });
+
+  /* ---------- Analysis ---------- */
+  function runAnalysis(route, label) {
+    if (!selectedVideoFile) {
+      setStatus("Upload a video first.", "error");
+      dropZone.classList.add("dragover");
+      setTimeout(() => dropZone.classList.remove("dragover"), 600);
+      return;
+    }
+    setStatus("Running " + label + " analysis…", "busy");
+    showLoader(label);
+
+    const formData = new FormData();
+    formData.append("video", selectedVideoFile);
+
+    fetch(route, { method: "POST", body: formData })
+      .then(r => r.json())
+      .then(data => {
+        hideLoader();
+        if (data.error) { setStatus("Error: " + data.error, "error"); return; }
+        if (!data.output_video) { setStatus("No output video returned.", "error"); return; }
+
+        lastOutputUrl = data.output_video + "?t=" + Date.now();
+        lastSingleResult = {
+          label: label,
+          route: route,
+          fileName: selectedVideoFile ? selectedVideoFile.name : "",
+          fileSize: selectedVideoFile ? selectedVideoFile.size : 0,
+          outputVideo: data.output_video,
+        };
+        videoPreview.src = lastOutputUrl;
+        videoPreview.controls = true;
+        videoPreview.loop = true;
+        videoPreview.muted = true;
+        previewMediaWrap.style.display = "block";
+        previewBadge.style.display = "block";
+        previewBadge.textContent = label.toUpperCase();
+        downloadBtn.style.display = "inline-block";
+        saveSingleDataBtn.style.display = "inline-block";
+        videoPreview.load();
+        videoPreview.play().catch(() => {});
+        setStatus(label + " analysis complete.", "ready");
+      })
+      .catch(err => {
+        hideLoader();
+        console.error(label + " fetch error:", err);
+        setStatus(label + " request failed. Check the terminal/console.", "error");
+      });
+  }
+
+  function runCompare() {
+    // Switch to the Compare Swings screen
+    const compareTab = document.querySelector('.mode-tab[data-mode="compare"]');
+    if (compareTab) compareTab.click();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ===================================================================
+     MODE TABS
+  =================================================================== */
+  const modeTabs = document.querySelectorAll(".mode-tab");
+  const screenSingle = document.getElementById("screenSingle");
+  const screenCompare = document.getElementById("screenCompare");
+
+  modeTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      modeTabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      const mode = tab.dataset.mode;
+      screenSingle.classList.toggle("active", mode === "single");
+      screenCompare.classList.toggle("active", mode === "compare");
+    });
+  });
+
+  /* ===================================================================
+     COMPARE SCREEN
+  =================================================================== */
+  const compareState = { a: null, b: null };
+
+  const compareRunBtn   = document.getElementById("compareRunBtn");
+  const resultsWrap     = document.getElementById("resultsWrap");
+  const metricBody      = document.getElementById("metricBody");
+  const resultA         = document.getElementById("resultA");
+  const resultB         = document.getElementById("resultB");
+  const downloadBothBtn = document.getElementById("downloadBothBtn");
+  const saveDataBtn     = document.getElementById("saveDataBtn");
+  const compareStatusText = document.getElementById("compareStatusText");
+  const compareStatusDot  = document.getElementById("compareStatusDot");
+
+  // Holds the latest comparison so the download/save buttons can use it
+  let lastCompare = null;
+
+  function setCompareStatus(msg, state = "ready") {
+    compareStatusText.textContent = msg;
+    compareStatusDot.className = "dot" + (state === "busy" ? " busy" : state === "error" ? " error" : "");
+  }
+
+  function setupSwingSlot(slot) {
+    const drop    = document.getElementById("drop" + slot);
+    const input   = document.getElementById("input" + slot);
+    const wrap     = document.getElementById("previewWrap" + slot);
+    const video   = document.getElementById("preview" + slot);
+    const fname   = document.getElementById("fname" + slot);
+    const key     = slot.toLowerCase();
+
+    function load(file) {
+      if (!file || !file.type.startsWith("video/")) {
+        setCompareStatus("Swing " + slot + ": please choose a valid video.", "error");
+        return;
+      }
+      compareState[key] = file;
+      video.src = URL.createObjectURL(file);
+      wrap.style.display = "block";
+      fname.textContent = file.name;
+      drop.querySelector("strong").textContent = "Change video";
+      refreshCompareButton();
+    }
+
+    drop.addEventListener("click", () => input.click());
+    input.addEventListener("change", function () { if (this.files[0]) load(this.files[0]); });
+
+    ["dragenter", "dragover"].forEach(e =>
+      drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("dragover"); }));
+    ["dragleave", "drop"].forEach(e =>
+      drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("dragover"); }));
+    drop.addEventListener("drop", ev => { if (ev.dataTransfer.files[0]) load(ev.dataTransfer.files[0]); });
+  }
+
+  setupSwingSlot("A");
+  setupSwingSlot("B");
+
+  function refreshCompareButton() {
+    const ready = compareState.a && compareState.b;
+    compareRunBtn.disabled = !ready;
+    if (ready) setCompareStatus("Ready to compare both swings.", "ready");
+    else setCompareStatus("Upload a video for both Swing 1 and Swing 2.", "ready");
+  }
+
+  function fmtDiff(diff, unit) {
+    const sign = diff > 0 ? "+" : "";
+    const cls  = diff > 0 ? "diff-pos" : diff < 0 ? "diff-neg" : "diff-zero";
+    return `<span class="${cls} val">${sign}${diff}${unit ? " " + unit : ""}</span>`;
+  }
+
+  function renderMetrics(rows) {
+    metricBody.innerHTML = "";
+    rows.forEach(r => {
+      const u = r.unit ? " " + r.unit : "";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.label}</td>
+        <td><span class="val col-a">${r.swing_1}${u}</span></td>
+        <td><span class="val col-b">${r.swing_2}${u}</span></td>
+        <td>${fmtDiff(r.difference, r.unit)}</td>`;
+      metricBody.appendChild(tr);
+    });
+  }
+
+  compareRunBtn.addEventListener("click", () => {
+    if (!compareState.a || !compareState.b) return;
+
+    setCompareStatus("Processing both swings…", "busy");
+    showLoader("Comparing swings");
+    compareRunBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append("video1", compareState.a);
+    formData.append("video2", compareState.b);
+
+    fetch("/compare", { method: "POST", body: formData })
+      .then(r => r.json())
+      .then(data => {
+        hideLoader();
+        compareRunBtn.disabled = false;
+        if (data.error) { setCompareStatus("Error: " + data.error, "error"); return; }
+        if (!data.metrics) { setCompareStatus("No comparison data returned.", "error"); return; }
+
+        // Remember result for download / save buttons
+        lastCompare = {
+          metrics: data.metrics,
+          video1: data.output_video_1,
+          video2: data.output_video_2,
+          name1: compareState.a ? compareState.a.name : "swing_1",
+          name2: compareState.b ? compareState.b.name : "swing_2",
+        };
+
+        resultA.src = data.output_video_1 + "?t=" + Date.now();
+        resultB.src = data.output_video_2 + "?t=" + Date.now();
+        resultA.load(); resultB.load();
+        resultA.play().catch(() => {}); resultB.play().catch(() => {});
+
+        renderMetrics(data.metrics);
+        resultsWrap.style.display = "block";
+        setCompareStatus("Comparison complete.", "ready");
+        resultsWrap.scrollIntoView({ behavior: "smooth", block: "start" });
+      })
+      .catch(err => {
+        hideLoader();
+        compareRunBtn.disabled = false;
+        console.error("Compare fetch error:", err);
+        setCompareStatus("Comparison request failed. Check terminal/console.", "error");
+      });
+  });
+
+  /* ---------- Download both result videos ---------- */
+  function triggerDownload(url, filename) {
+    return fetch(url)
+      .then(r => r.blob())
+      .then(blob => {
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 4000);
+      });
+  }
+
+  downloadBothBtn.addEventListener("click", () => {
+    if (!lastCompare) { setCompareStatus("Run a comparison first.", "error"); return; }
+    setCompareStatus("Downloading both result videos…", "busy");
+    Promise.all([
+      triggerDownload(lastCompare.video1, "swingtech_swing1_result.mp4"),
+      triggerDownload(lastCompare.video2, "swingtech_swing2_result.mp4"),
+    ])
+      .then(() => setCompareStatus("Both videos downloaded.", "ready"))
+      .catch(err => {
+        console.error("Download error:", err);
+        setCompareStatus("Download failed. Check console.", "error");
+      });
+  });
+
+  /* ---------- Save comparison data (CSV + JSON) ---------- */
+  function buildCsv(m) {
+    const header = ["Metric", "Unit", "Swing 1", "Swing 2", "Difference"];
+    const lines = [header.join(",")];
+    m.forEach(r => {
+      lines.push([
+        '"' + r.label + '"',
+        r.unit || "",
+        r.swing_1,
+        r.swing_2,
+        r.difference,
+      ].join(","));
+    });
+    return lines.join("\n");
+  }
+
+  function saveBlob(content, filename, type) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  saveDataBtn.addEventListener("click", () => {
+    if (!lastCompare) { setCompareStatus("Run a comparison first.", "error"); return; }
+
+    const title = "Compare: " + lastCompare.name1 + " vs " + lastCompare.name2;
+    const data = {
+      swing_1: lastCompare.name1,
+      swing_2: lastCompare.name2,
+      metrics: lastCompare.metrics,
+      output_video_1: lastCompare.video1,
+      output_video_2: lastCompare.video2,
+    };
+
+    saveDataBtn.disabled = true;
+    setCompareStatus("Saving comparison report…", "busy");
+
+    saveReportToServer("compare", title, data)
+      .then(res => {
+        saveDataBtn.disabled = false;
+        if (res.error) { setCompareStatus("Save failed: " + res.error, "error"); return; }
+        setCompareStatus("Comparison report saved to Saved Reports.", "ready");
+        loadReports();
+      })
+      .catch(err => {
+        saveDataBtn.disabled = false;
+        console.error("Save report error:", err);
+        setCompareStatus("Save failed. Check terminal/console.", "error");
+      });
+  });
+
+  /* ===================================================================
+     SAVED REPORTS (server-side persistence)
+  =================================================================== */
+  const reportsList    = document.getElementById("reportsList");
+  const reportsCount   = document.getElementById("reportsCount");
+  const refreshReportsBtn = document.getElementById("refreshReportsBtn");
+  const reportModal    = document.getElementById("reportModal");
+  const reportModalTitle = document.getElementById("reportModalTitle");
+  const reportModalWhen  = document.getElementById("reportModalWhen");
+  const reportModalBody  = document.getElementById("reportModalBody");
+  const reportModalClose = document.getElementById("reportModalClose");
+
+  function fmtDate(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString();
+  }
+
+  // POST a report to the server. Returns a promise.
+  function saveReportToServer(type, title, data) {
+    return fetch("/reports", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, title, data }),
+    }).then(r => r.json());
+  }
+
+  function renderReports(reports) {
+    if (!reports || reports.length === 0) {
+      reportsCount.textContent = "No saved reports yet";
+      reportsList.innerHTML = '<div class="reports-empty">Run an analysis or comparison, then click “Save Data”.</div>';
+      return;
+    }
+    reportsCount.textContent = reports.length + (reports.length === 1 ? " report saved" : " reports saved");
+    reportsList.innerHTML = "";
+    reports.forEach(rep => {
+      const row = document.createElement("div");
+      row.className = "report-item";
+      const badgeClass = rep.type === "compare" ? "compare" : "analysis";
+      row.innerHTML = `
+        <div class="meta">
+          <b><span class="report-badge ${badgeClass}">${rep.type}</span>${rep.title || "Untitled"}</b>
+          <span>${fmtDate(rep.created)}</span>
+        </div>
+        <div class="file-actions">
+          <button class="small-btn" data-view="${rep.id}">View</button>
+          <button class="small-btn danger" data-del="${rep.id}">Delete</button>
+        </div>`;
+      reportsList.appendChild(row);
+    });
+    reportsList.querySelectorAll("[data-view]").forEach(b =>
+      b.addEventListener("click", () => viewReport(b.dataset.view)));
+    reportsList.querySelectorAll("[data-del]").forEach(b =>
+      b.addEventListener("click", () => deleteReport(b.dataset.del)));
+  }
+
+  function loadReports() {
+    reportsCount.textContent = "Loading…";
+    return fetch("/reports")
+      .then(r => r.json())
+      .then(d => renderReports(d.reports || []))
+      .catch(err => {
+        console.error("Load reports error:", err);
+        reportsCount.textContent = "Could not load reports";
+        reportsList.innerHTML = '<div class="reports-empty">Server unavailable.</div>';
+      });
+  }
+
+  function viewReport(id) {
+    fetch("/reports/" + id)
+      .then(r => r.json())
+      .then(rep => {
+        if (rep.error) { return; }
+        reportModalTitle.textContent = rep.title || "Report";
+        reportModalWhen.textContent = (rep.type ? rep.type.toUpperCase() + " · " : "") + fmtDate(rep.created);
+        reportModalBody.textContent = JSON.stringify(rep.data, null, 2);
+        reportModal.classList.add("show");
+      })
+      .catch(err => console.error("View report error:", err));
+  }
+
+  function deleteReport(id) {
+    fetch("/reports/" + id, { method: "DELETE" })
+      .then(r => r.json())
+      .then(() => loadReports())
+      .catch(err => console.error("Delete report error:", err));
+  }
+
+  refreshReportsBtn.addEventListener("click", loadReports);
+  reportModalClose.addEventListener("click", () => reportModal.classList.remove("show"));
+  reportModal.addEventListener("click", e => { if (e.target === reportModal) reportModal.classList.remove("show"); });
+
+  /* ---------- Init ---------- */
+  renderLibrary();
+  loadReports();
+  setStatus("System ready", "ready");
+  setCompareStatus("Upload two swings to compare", "ready");
+</script>
+
+</body>
+</html>
