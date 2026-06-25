@@ -7,6 +7,3 @@ services:
     buildCommand: "apt-get update && apt-get install -y ffmpeg || true; pip install -r requirements.txt"
     # Run with gunicorn. Long timeout because video analysis is slow.
     startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT --timeout 600 --workers 1"
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.10"
